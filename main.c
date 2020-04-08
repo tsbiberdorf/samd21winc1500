@@ -35,12 +35,13 @@ void HardFault_Handler()
  */
 static void task_led(void *p)
 {
-	int cnt = 0;
 	(void)p;
+
+	printf("LED task started\r\n");
+
 	for (;;) 
 	{
 		gpio_toggle_pin_level(LED0);
-		printf("cnt %d\r\n",cnt++);
 		os_sleep(500);
 	}
 }

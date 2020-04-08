@@ -45,21 +45,16 @@
 extern "C" {
 #endif
 
-/** Security mode */
-#define USE_WEP (0) /*< Set to (1) to use WEP, and (0) to use OPEN */
+/** Wi-Fi Settings */
+#define MAIN_WLAN_SSID "TBT"            /**< Destination SSID */
+#define MAIN_WLAN_AUTH M2M_WIFI_SEC_WPA_PSK /**< Security manner */
+#define MAIN_WLAN_PSK "TBTP4ssW0rd"            /**< Password for Destination SSID */
+#define MAIN_WIFI_M2M_PRODUCT_NAME "NMCTemp"
+#define MAIN_WIFI_M2M_SERVER_IP 0xFFFFFFFF /* 255.255.255.255 */
+#define MAIN_WIFI_M2M_SERVER_PORT (6666)
+#define MAIN_WIFI_M2M_REPORT_INTERVAL (1000)
 
-/** AP mode Settings */
-//#define MAIN_WLAN_SSID "DEMO_AP" /* < SSID */
-#define MAIN_WLAN_SSID "TBT" /* < SSID */
-#if USE_WEP
-#define MAIN_WLAN_AUTH M2M_WIFI_SEC_WEP /* < Security manner */
-//#define MAIN_WLAN_WEP_KEY "1234567890"  /* < Security Key in WEP Mode */
-#define MAIN_WLAN_WEP_KEY "TBTP4ssW0rd"  /* < Security Key in WEP Mode */
-#define MAIN_WLAN_WEP_KEY_INDEX (0)
-#else
-#define MAIN_WLAN_AUTH M2M_WIFI_SEC_OPEN /* < Security manner */
-#endif
-#define MAIN_WLAN_CHANNEL (6) /* < Channel number */
+#define MAIN_WIFI_M2M_BUFFER_SIZE 1460
 
 #ifdef __cplusplus
 }
