@@ -21,11 +21,21 @@ extern "C" {
 #include <hal_io.h>
 #include <hal_sleep.h>
 
+#include <hal_ext_irq.h>
+
+#include <hal_spi_m_sync.h>
+
 #include <hal_usart_sync.h>
 
 #include <hal_delay.h>
 
+extern struct spi_m_sync_descriptor WINC_SPI;
+
 extern struct usart_sync_descriptor EDBG_UART;
+
+void WINC_SPI_PORT_init(void);
+void WINC_SPI_CLOCK_init(void);
+void WINC_SPI_init(void);
 
 void EDBG_UART_PORT_init(void);
 void EDBG_UART_CLOCK_init(void);

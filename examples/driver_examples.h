@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+void WINC_IRQ_example(void);
+
 void EDBG_UART_example(void);
 
 void delay_example(void);

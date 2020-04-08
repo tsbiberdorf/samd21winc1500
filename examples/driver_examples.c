@@ -10,6 +10,33 @@
 #include "driver_init.h"
 #include "utils.h"
 
+static void button_on_PB04_pressed(void)
+{
+}
+
+/**
+ * Example of using WINC_IRQ
+ */
+void WINC_IRQ_example(void)
+{
+
+	ext_irq_register(PIN_PB04, button_on_PB04_pressed);
+}
+
+/**
+ * Example of using WINC_SPI to write "Hello World" using the IO abstraction.
+ */
+static uint8_t example_WINC_SPI[12] = "Hello World!";
+
+void WINC_SPI_example(void)
+{
+	struct io_descriptor *io;
+	spi_m_sync_get_io_descriptor(&WINC_SPI, &io);
+
+	spi_m_sync_enable(&WINC_SPI);
+	io_write(io, example_WINC_SPI, 12);
+}
+
 /**
  * Example of using EDBG_UART to write "Hello World" using the IO abstraction.
  */

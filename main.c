@@ -14,8 +14,9 @@
 #include <stdarg.h>
 #include <string.h>
 
-static TaskHandle_t      xCreatedLedTask;
+extern void task_winc1500_create(void);
 
+static TaskHandle_t xCreatedLedTask;
 
 #define TASK_LED_STACK_SIZE (1024 / sizeof(portSTACK_TYPE))
 #define TASK_LED_STACK_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -39,7 +40,7 @@ static void task_led(void *p)
 	for (;;) 
 	{
 		gpio_toggle_pin_level(LED0);
-		printf("cnt %d",cnt++);
+		printf("cnt %d\r\n",cnt++);
 		os_sleep(500);
 	}
 }
@@ -56,6 +57,7 @@ static void task_led_create(void)
 		}
 	}
 }
+
 
 void vApplicationIdleHook(void)
 {
@@ -76,6 +78,7 @@ int main(void)
 	atmel_start_init();
 
 	task_led_create();
+	task_winc1500_create();
 	vTaskStartScheduler();
 
 /*
