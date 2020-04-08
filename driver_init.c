@@ -22,9 +22,9 @@ void WINC_IRQ_init(void)
 	_gclk_enable_channel(EIC_GCLK_ID, CONF_GCLK_EIC_SRC);
 
 	// Set pin direction to input
-	gpio_set_pin_direction(PB04, GPIO_DIRECTION_IN);
+	gpio_set_pin_direction(CONF_WINC_EXT_INT_PIN, GPIO_DIRECTION_IN);
 
-	gpio_set_pin_pull_mode(PB04,
+	gpio_set_pin_pull_mode(CONF_WINC_EXT_INT_PIN,
 	                       // <y> Pull configuration
 	                       // <id> pad_pull_config
 	                       // <GPIO_PULL_OFF"> Off
@@ -32,7 +32,7 @@ void WINC_IRQ_init(void)
 	                       // <GPIO_PULL_DOWN"> Pull-down
 	                       GPIO_PULL_OFF);
 
-	gpio_set_pin_function(PB04, PINMUX_PB04A_EIC_EXTINT4);
+	gpio_set_pin_function(CONF_WINC_EXT_INT_PIN, PINMUX_PB04A_EIC_EXTINT4);
 
 	ext_irq_init();
 }
@@ -123,7 +123,7 @@ void system_init(void)
 
 	// GPIO on PA05
 
-	gpio_set_pin_level(CS_PIN,
+	gpio_set_pin_level(WINC_PIN_CHIP_SELECT,
 	                   // <y> Initial level
 	                   // <id> pad_initial_level
 	                   // <false"> Low
@@ -131,13 +131,13 @@ void system_init(void)
 	                   true);
 
 	// Set pin direction to output
-	gpio_set_pin_direction(CS_PIN, GPIO_DIRECTION_OUT);
+	gpio_set_pin_direction(WINC_PIN_CHIP_SELECT, GPIO_DIRECTION_OUT);
 
-	gpio_set_pin_function(CS_PIN, GPIO_PIN_FUNCTION_OFF);
+	gpio_set_pin_function(WINC_PIN_CHIP_SELECT, GPIO_PIN_FUNCTION_OFF);
 
 	// GPIO on PB05
 
-	gpio_set_pin_level(CE_PIN,
+	gpio_set_pin_level(WINC_PIN_CHIP_ENABLE,
 	                   // <y> Initial level
 	                   // <id> pad_initial_level
 	                   // <false"> Low
@@ -145,13 +145,13 @@ void system_init(void)
 	                   false);
 
 	// Set pin direction to output
-	gpio_set_pin_direction(CE_PIN, GPIO_DIRECTION_OUT);
+	gpio_set_pin_direction(WINC_PIN_CHIP_ENABLE, GPIO_DIRECTION_OUT);
 
-	gpio_set_pin_function(CE_PIN, GPIO_PIN_FUNCTION_OFF);
+	gpio_set_pin_function(WINC_PIN_CHIP_ENABLE, GPIO_PIN_FUNCTION_OFF);
 
 	// GPIO on PB06
 
-	gpio_set_pin_level(RESET_PIN,
+	gpio_set_pin_level(WINC_PIN_RESET,
 	                   // <y> Initial level
 	                   // <id> pad_initial_level
 	                   // <false"> Low
@@ -159,9 +159,9 @@ void system_init(void)
 	                   false);
 
 	// Set pin direction to output
-	gpio_set_pin_direction(RESET_PIN, GPIO_DIRECTION_OUT);
+	gpio_set_pin_direction(WINC_PIN_RESET, GPIO_DIRECTION_OUT);
 
-	gpio_set_pin_function(RESET_PIN, GPIO_PIN_FUNCTION_OFF);
+	gpio_set_pin_function(WINC_PIN_RESET, GPIO_PIN_FUNCTION_OFF);
 
 	// GPIO on PB30
 
