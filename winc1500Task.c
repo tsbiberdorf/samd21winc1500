@@ -6,6 +6,7 @@
 #include "common/include/nm_common.h"
 #include "driver/include/m2m_wifi.h"
 #include "socket/include/socket.h"
+#include "winc1500Task.h"
 
 #include <hal_gpio.h>
 #include <hal_delay.h>
@@ -22,6 +23,17 @@
 #include <string.h>
 
 static TaskHandle_t xCreatedWiFiTask;
+
+xSemaphoreHandle xSemaphoreWINCEvent;
+xSemaphoreHandle xSemaphoreWINCConnect;
+
+/*
+ * queues to be used for event handling
+ */
+xQueueHandle xQueueOpenEvents;
+xQueueHandle xQueueSocketEvents;
+xQueueHandle xQueueSocketQ[MAX_SOCKET]; /* to handle max number of TCP & UDP sockets */
+xQueueHandle xQResolveEvent;
 
 #define TASK_WIFI_STACK_SIZE (1024 / sizeof(portSTACK_TYPE))
 #define TASK_WIFI_STACK_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -139,6 +151,20 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	}
 }
 
+static void resolve_cb(uint8_t *pu8DomainName, uint32_t u32ServerIP)
+{
+
+	printf("app_resolve_callback : DomainName %s \r\n", pu8DomainName);
+	
+	resolve_event_message_t event;
+	event.pu8DomainName = pu8DomainName;
+	event.u32ServerIP = u32ServerIP;
+	
+	xQueueSendToBack( xQResolveEvent, ( void * ) &event, 20 );
+	
+}
+
+
 /**
  * \brief Callback to get the Wi-Fi status update.
  *
@@ -202,13 +228,33 @@ static void task_winc1500(void *p)
 	tstrWifiInitParam param;
 	int8_t            ret = 0;
 	struct sockaddr_in addr;
+	int idx;
+
+	/*
+	 * for communication with sockets
+	 */
+	xQueueSocketEvents = xQueueCreate( 4, sizeof( socket_event_message_t ) );
+	xQResolveEvent = xQueueCreate( 4, sizeof( socket_event_message_t ) );
+	xQueueOpenEvents = xQueueCreate( 4, sizeof( SOCKET ) );
+	
+	for( idx=0; idx < MAX_SOCKET; idx++)
+	{
+		xQueueSocketQ[idx] = xQueueCreate(2,sizeof( socket_event_message_t));
+	}
+
+	/* for debugging */	
+	vQueueAddToRegistry(xQueueSocketQ[0], "event0");
+	vQueueAddToRegistry(xQueueSocketQ[1], "event1");
+	vQueueAddToRegistry(xQueueSocketQ[2], "event2");
+	vQueueAddToRegistry(xQueueSocketQ[3], "event3");
+	vQueueAddToRegistry(xQueueSocketQ[4], "event4");
 
 	/* Initialize the BSP. */
 	nm_bsp_init();
 
 	/* Initialize socket address structure. */
 	addr.sin_family      = AF_INET;
-	addr.sin_port        = _htons(MAIN_WIFI_M2M_SERVER_PORT);
+	addr.sin_port        = _htons(HTTP_PORT);
 	addr.sin_addr.s_addr = 0;
 
 	/* Initialize Wi-Fi parameters structure. */
@@ -220,12 +266,15 @@ static void task_winc1500(void *p)
 
 	/* Initialize socket module */
 	socketInit();
-	registerSocketCallback(socket_cb, NULL);
+	registerSocketCallback(socket_cb, resolve_cb);
+
+	xTaskCreate(task_web_events, "WIFI EV", 2500, NULL, tskIDLE_PRIORITY + 2, NULL);
 
 	/* Connect to router. */
 	m2m_wifi_connect(
 	(char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID), MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
 
+	xTaskCreate(task_web_socket, "WIFI IO", 2900, NULL, tskIDLE_PRIORITY + 1, NULL);
 
 
 
