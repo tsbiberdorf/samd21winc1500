@@ -124,7 +124,9 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;
 		if (pstrRecv && pstrRecv->s16BufferSize > 0) {
 			printf("socket_cb: recv success!\r\n");
-			send(tcp_client_socket, &msg_wifi_product, sizeof(t_msg_wifi_product), 0);
+			/* echo data back to client */
+			send(tcp_client_socket,pstrRecv->pu8Buffer,pstrRecv->s16BufferSize,0);
+			//send(tcp_client_socket, &msg_wifi_product, sizeof(t_msg_wifi_product), 0);
 		} else {
 			printf("socket_cb: recv error!\r\n");
 			close(tcp_server_socket);
