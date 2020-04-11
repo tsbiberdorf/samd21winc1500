@@ -321,10 +321,6 @@ static void task_winc1500(void *p)
 				if( notifyBits & SOCKET_CB_BIND_ERROR)
 				{
 					/* Open TCP server socket */
-
-
-
-
 					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 					{
 						printf("main: failed to create TCP server socket error!\r\n");
