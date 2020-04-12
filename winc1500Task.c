@@ -6,7 +6,6 @@
 #include "common/include/nm_common.h"
 #include "driver/include/m2m_wifi.h"
 #include "socket/include/socket.h"
-#include "winc1500Task.h"
 
 #include <hal_gpio.h>
 #include <hal_delay.h>
@@ -22,18 +21,18 @@
 #include <stdarg.h>
 #include <string.h>
 
-static TaskHandle_t xCreatedWiFiTask;
-
-xSemaphoreHandle xSemaphoreWINCEvent;
-xSemaphoreHandle xSemaphoreWINCConnect;
-
 /*
- * queues to be used for event handling
+ * WINC1500 Task events
  */
-xQueueHandle xQueueOpenEvents;
-xQueueHandle xQueueSocketEvents;
-xQueueHandle xQueueSocketQ[MAX_SOCKET]; /* to handle max number of TCP & UDP sockets */
-xQueueHandle xQResolveEvent;
+#define WIFI_CB_STATE_CHANGED (1<<0)
+#define WIFI_CB_DHCP_CONNECTION (1<<1)
+#define WIFI_CB_OTHER (1<<2)
+
+#define SOCKET_CB_EVENT		(1<<3) /**< Socket event has happened */
+#define SOCKET_CB_MSG_SENT	(1<<4) /**< echo message has been sent, sockets have been closed */
+#define SOCKET_CB_BIND_ERROR	(1<<5) /**< echo message has been sent, sockets have been closed */
+
+static TaskHandle_t xCreatedWiFiTask;
 
 #define TASK_WIFI_STACK_SIZE (1024 / sizeof(portSTACK_TYPE))
 #define TASK_WIFI_STACK_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -58,6 +57,8 @@ static SOCKET tcp_client_socket = -1;
 /** Wi-Fi connection state */
 static uint8_t wifi_connected;
 
+static char echoBuffer[64];
+
 /**
  * \brief Callback to get the Data from socket.
  *
@@ -80,6 +81,9 @@ static uint8_t wifi_connected;
  */
 static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 {
+	int idx;
+	xTaskNotify(xCreatedWiFiTask,SOCKET_CB_EVENT,eSetBits);
+
 	switch (u8Msg) {
 	/* Socket bind */
 	case SOCKET_MSG_BIND: {
@@ -88,6 +92,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			printf("socket_cb: bind success!\r\n");
 			listen(tcp_server_socket, 0);
 		} else {
+			xTaskNotify(xCreatedWiFiTask,SOCKET_CB_BIND_ERROR,eSetBits);
 			printf("socket_cb: bind error!\r\n");
 			close(tcp_server_socket);
 			tcp_server_socket = -1;
@@ -101,6 +106,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			printf("socket_cb: listen success!\r\n");
 			accept(tcp_server_socket, NULL, NULL);
 		} else {
+
 			printf("socket_cb: listen error!\r\n");
 			close(tcp_server_socket);
 			tcp_server_socket = -1;
@@ -124,6 +130,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 
 	/* Message send */
 	case SOCKET_MSG_SEND: {
+		xTaskNotify(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits);
 		printf("socket_cb: send success!\r\n");
 		printf("TCP Server Test Complete!\r\n");
 		printf("close socket\n");
@@ -136,7 +143,14 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;
 		if (pstrRecv && pstrRecv->s16BufferSize > 0) {
 			printf("socket_cb: recv success!\r\n");
-			send(tcp_client_socket, &msg_wifi_product, sizeof(t_msg_wifi_product), 0);
+			/* echo data back to client */
+			for(idx=0;idx<pstrRecv->s16BufferSize;idx++)
+			{
+				echoBuffer[idx] = pstrRecv->pu8Buffer[idx];
+			}
+			printf("echo back: %s\n",echoBuffer);
+			send(tcp_client_socket,echoBuffer,idx,0);
+			//send(tcp_client_socket, &msg_wifi_product, sizeof(t_msg_wifi_product), 0);
 		} else {
 			printf("socket_cb: recv error!\r\n");
 			close(tcp_server_socket);
@@ -150,20 +164,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		break;
 	}
 }
-
-static void resolve_cb(uint8_t *pu8DomainName, uint32_t u32ServerIP)
-{
-
-	printf("app_resolve_callback : DomainName %s \r\n", pu8DomainName);
-	
-	resolve_event_message_t event;
-	event.pu8DomainName = pu8DomainName;
-	event.u32ServerIP = u32ServerIP;
-	
-	xQueueSendToBack( xQResolveEvent, ( void * ) &event, 20 );
-	
-}
-
 
 /**
  * \brief Callback to get the Wi-Fi status update.
@@ -192,8 +192,11 @@ static void resolve_cb(uint8_t *pu8DomainName, uint32_t u32ServerIP)
  */
 static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 {
+
 	switch (u8MsgType) {
-	case M2M_WIFI_RESP_CON_STATE_CHANGED: {
+	case M2M_WIFI_RESP_CON_STATE_CHANGED: 
+	{
+		xTaskNotify(xCreatedWiFiTask,WIFI_CB_STATE_CHANGED,eSetBits);
 		tstrM2mWifiStateChanged *pstrWifiState = (tstrM2mWifiStateChanged *)pvMsg;
 		if (pstrWifiState->u8CurrState == M2M_WIFI_CONNECTED) {
 			printf("wifi_cb: M2M_WIFI_RESP_CON_STATE_CHANGED: CONNECTED\r\n");
@@ -204,9 +207,12 @@ static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 			m2m_wifi_connect(
 			    (char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID), MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
 		}
-	} break;
+	} 
+	break;
 
-	case M2M_WIFI_REQ_DHCP_CONF: {
+	case M2M_WIFI_REQ_DHCP_CONF: 
+	{
+		xTaskNotify(xCreatedWiFiTask,WIFI_CB_DHCP_CONNECTION,eSetBits);
 		uint8_t *pu8IPAddress = (uint8_t *)pvMsg;
 		wifi_connected        = 1;
 		printf("wifi_cb: M2M_WIFI_REQ_DHCP_CONF: IP is %u.%u.%u.%u\r\n",
@@ -214,9 +220,11 @@ static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 		       pu8IPAddress[1],
 		       pu8IPAddress[2],
 		       pu8IPAddress[3]);
-	} break;
+	}
+	break;
 
 	default:
+		xTaskNotify(xCreatedWiFiTask,WIFI_CB_OTHER,eSetBits);
 		break;
 	}
 }
@@ -227,34 +235,17 @@ static void task_winc1500(void *p)
 	(void)p;
 	tstrWifiInitParam param;
 	int8_t            ret = 0;
+	uint32_t notifyBits;
 	struct sockaddr_in addr;
-	int idx;
-
-	/*
-	 * for communication with sockets
-	 */
-	xQueueSocketEvents = xQueueCreate( 4, sizeof( socket_event_message_t ) );
-	xQResolveEvent = xQueueCreate( 4, sizeof( socket_event_message_t ) );
-	xQueueOpenEvents = xQueueCreate( 4, sizeof( SOCKET ) );
-	
-	for( idx=0; idx < MAX_SOCKET; idx++)
-	{
-		xQueueSocketQ[idx] = xQueueCreate(2,sizeof( socket_event_message_t));
-	}
-
-	/* for debugging */	
-	vQueueAddToRegistry(xQueueSocketQ[0], "event0");
-	vQueueAddToRegistry(xQueueSocketQ[1], "event1");
-	vQueueAddToRegistry(xQueueSocketQ[2], "event2");
-	vQueueAddToRegistry(xQueueSocketQ[3], "event3");
-	vQueueAddToRegistry(xQueueSocketQ[4], "event4");
-
+	BaseType_t xResult;
+	int8_t wifiConnectionFlag = 0; // flag to indicate if a wifi connection is made
+	int8_t openSocketFlag = 0;
 	/* Initialize the BSP. */
 	nm_bsp_init();
 
 	/* Initialize socket address structure. */
 	addr.sin_family      = AF_INET;
-	addr.sin_port        = _htons(HTTP_PORT);
+	addr.sin_port        = _htons(MAIN_WIFI_M2M_SERVER_PORT);
 	addr.sin_addr.s_addr = 0;
 
 	/* Initialize Wi-Fi parameters structure. */
@@ -266,23 +257,86 @@ static void task_winc1500(void *p)
 
 	/* Initialize socket module */
 	socketInit();
-	registerSocketCallback(socket_cb, resolve_cb);
-
-	xTaskCreate(task_web_events, "WIFI EV", 2500, NULL, tskIDLE_PRIORITY + 2, NULL);
+	registerSocketCallback(socket_cb, NULL);
 
 	/* Connect to router. */
 	m2m_wifi_connect(
 	(char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID), MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
 
-	xTaskCreate(task_web_socket, "WIFI IO", 2900, NULL, tskIDLE_PRIORITY + 1, NULL);
 
 
 
 	for (;;)
 	{
+		xResult = xTaskNotifyWait( 0x00,    /* Don't clear bits on entry. */
+				0xFFFFFFFF,        /* Clear all bits on exit. */
+				&notifyBits, /* Stores the notified value. */
+				20 );
+		if( xResult == pdPASS )
+		{
+			if( notifyBits & WIFI_CB_STATE_CHANGED)
+			{
+				printf("WIFI_CB_STATE_CHANGED\n");
+			}
+			if( notifyBits & WIFI_CB_DHCP_CONNECTION)
+			{
+				wifiConnectionFlag = 1;
+			}
+			if( notifyBits & WIFI_CB_OTHER)
+			{
+				printf("WIFI_CB_OTHER\n");
+			}
+
+			if( wifiConnectionFlag )
+			{
+				if( !openSocketFlag )
+				{
+					/* Open TCP server socket */
+					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+					{
+						printf("main: failed to create TCP server socket error!\r\n");
+					}
+					else
+					{
+						/* Bind service*/
+						openSocketFlag = 1;
+						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+					}
+				}
+
+				if( notifyBits & SOCKET_CB_MSG_SENT)
+				{
+					/* Open TCP server socket */
+					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+					{
+						printf("main: failed to create TCP server socket error!\r\n");
+					}
+					else
+					{
+						/* Bind service*/
+						openSocketFlag = 1;
+						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+					}
+				}
+				if( notifyBits & SOCKET_CB_BIND_ERROR)
+				{
+					/* Open TCP server socket */
+					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+					{
+						printf("main: failed to create TCP server socket error!\r\n");
+					}
+					else
+					{
+						/* Bind service*/
+						openSocketFlag = 1;
+						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+					}
+				}
+			}
+		}
 		/* Handle pending events from network controller. */
 		m2m_wifi_handle_events(NULL);
-
+#if 0
 		if (wifi_connected == M2M_WIFI_CONNECTED) {
 			if (tcp_server_socket < 0) {
 				/* Open TCP server socket */
@@ -295,8 +349,8 @@ static void task_winc1500(void *p)
 				bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 			}
 		}
-
-		os_sleep(10);
+#endif
+		//os_sleep(10);
 	}
 }
 
