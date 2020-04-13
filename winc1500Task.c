@@ -6,6 +6,7 @@
 #include "common/include/nm_common.h"
 #include "driver/include/m2m_wifi.h"
 #include "socket/include/socket.h"
+#include "httpOperations.h"
 
 #include <hal_gpio.h>
 #include <hal_delay.h>
@@ -58,6 +59,7 @@ static SOCKET tcp_client_socket = -1;
 static uint8_t wifi_connected;
 
 static char echoBuffer[64];
+
 
 /**
  * \brief Callback to get the Data from socket.
@@ -141,6 +143,13 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	/* Message receive */
 	case SOCKET_MSG_RECV: {
 		tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;
+		if (pstrRecv && pstrRecv->s16BufferSize > 0) 
+		{
+			httpOperationsHttpParse(pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
+		}
+		close(tcp_client_socket);
+		close(tcp_server_socket);
+#if 0
 		if (pstrRecv && pstrRecv->s16BufferSize > 0) {
 			printf("socket_cb: recv success!\r\n");
 			/* echo data back to client */
@@ -156,8 +165,9 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			close(tcp_server_socket);
 			tcp_server_socket = -1;
 		}
-	}
 
+#endif
+	}
 	break;
 
 	default:
@@ -245,8 +255,11 @@ static void task_winc1500(void *p)
 
 	/* Initialize socket address structure. */
 	addr.sin_family      = AF_INET;
-	addr.sin_port        = _htons(MAIN_WIFI_M2M_SERVER_PORT);
+	addr.sin_port        = _htons(HTTP_PORT);
 	addr.sin_addr.s_addr = 0;
+
+	setupHttpParserOperations();
+
 
 	/* Initialize Wi-Fi parameters structure. */
 	memset((uint8_t *)&param, 0, sizeof(tstrWifiInitParam));
