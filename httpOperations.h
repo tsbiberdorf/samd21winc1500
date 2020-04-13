@@ -11,7 +11,7 @@
 
 void setupHttpParserOperations();
 void httpOperationsHttpParse(char *dataBuffer,int bytesRecv);
-
+void SendPage(SOCKET tcpSocket);
 
 
 #endif /* HTTPOPERATIONS_H_ */

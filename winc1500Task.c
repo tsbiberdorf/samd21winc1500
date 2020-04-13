@@ -147,8 +147,9 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		{
 			httpOperationsHttpParse(pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
 		}
-		close(tcp_client_socket);
-		close(tcp_server_socket);
+		SendPage(tcp_client_socket);
+//		close(tcp_client_socket);
+//		close(tcp_server_socket);
 #if 0
 		if (pstrRecv && pstrRecv->s16BufferSize > 0) {
 			printf("socket_cb: recv success!\r\n");

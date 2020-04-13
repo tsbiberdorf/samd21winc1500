@@ -9,11 +9,26 @@
 #include "task.h"
 #include "semphr.h"
 
+#include "common/include/nm_common.h"
+#include "driver/include/m2m_wifi.h"
+#include "socket/include/socket.h"
 #include "http_parser.h"
 
 
 http_parser_settings tl_HTTPSettings;
 http_parser *tl_PtrHTTPParser = NULL;
+
+char indexPage[]="\
+<html>\
+        <head>\
+        <title> very simple HTML page </title>\
+        </head>\
+        <body>\
+                <h1>heading 1: very simple HTML page</h1>\
+                <p>some data</p>\
+        </body>\
+</html>";
+
 
 /**
  * \brief callback for URL parser
@@ -58,5 +73,10 @@ void httpOperationsHttpParse(char *dataBuffer,int bytesRecv)
 
 	nparsed = http_parser_execute(tl_PtrHTTPParser,&tl_HTTPSettings,dataBuffer,bytesRecv);
 
+}
+
+void SendPage(SOCKET tcpSocket)
+{
+	send(tcpSocket,indexPage,sizeof(indexPage),0);
 }
 
