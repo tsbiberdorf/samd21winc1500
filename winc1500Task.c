@@ -95,8 +95,8 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			listen(tcp_server_socket, 0);
 		} else {
 			xTaskNotify(xCreatedWiFiTask,SOCKET_CB_BIND_ERROR,eSetBits);
-			printf("socket_cb: bind error!\r\n");
 			close(tcp_server_socket);
+			printf("socket_cb: bind error! %d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
 		}
 	} break;
@@ -105,12 +105,12 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	case SOCKET_MSG_LISTEN: {
 		tstrSocketListenMsg *pstrListen = (tstrSocketListenMsg *)pvMsg;
 		if (pstrListen && pstrListen->status == 0) {
-			printf("socket_cb: listen success!\r\n");
 			accept(tcp_server_socket, NULL, NULL);
+			printf("socket_cb: listen success! %d\r\n",tcp_server_socket);
 		} else {
 
-			printf("socket_cb: listen error!\r\n");
 			close(tcp_server_socket);
+			printf("socket_cb: listen error! %d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
 		}
 	} break;
@@ -119,25 +119,25 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	case SOCKET_MSG_ACCEPT: {
 		tstrSocketAcceptMsg *pstrAccept = (tstrSocketAcceptMsg *)pvMsg;
 		if (pstrAccept) {
-			printf("socket_cb: accept success!\r\n");
 			accept(tcp_server_socket, NULL, NULL);
 			tcp_client_socket = pstrAccept->sock;
 			recv(tcp_client_socket, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
+			printf("socket_cb: accept success! %d %d\r\n",tcp_client_socket,strlen(gau8SocketTestBuffer));
 		} else {
-			printf("socket_cb: accept error!\r\n");
 			close(tcp_server_socket);
+			printf("socket_cb: accept error! %d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
 		}
 	} break;
 
 	/* Message send */
 	case SOCKET_MSG_SEND: {
-		xTaskNotify(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits);
-		printf("socket_cb: send success!\r\n");
-		printf("TCP Server Test Complete!\r\n");
-		printf("close socket\n");
 		close(tcp_client_socket);
 		close(tcp_server_socket);
+		printf("socket_cb: send success! c:%d s:%d\r\n",tcp_client_socket,tcp_server_socket);
+		printf("TCP Server Test Complete!\r\n");
+		printf("close socket\n");
+		xTaskNotify(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits);
 	} break;
 
 	/* Message receive */
@@ -314,6 +314,7 @@ static void task_winc1500(void *p)
 					{
 						/* Bind service*/
 						openSocketFlag = 1;
+						printf("bind to socket %d\n",tcp_server_socket);
 						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 					}
 				}
@@ -321,6 +322,7 @@ static void task_winc1500(void *p)
 				if( notifyBits & SOCKET_CB_MSG_SENT)
 				{
 					/* Open TCP server socket */
+					vTaskDelay(100);
 					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 					{
 						printf("main: failed to create TCP server socket error!\r\n");
@@ -329,6 +331,7 @@ static void task_winc1500(void *p)
 					{
 						/* Bind service*/
 						openSocketFlag = 1;
+						printf("bind to socket %d\n",tcp_server_socket);
 						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 					}
 				}
@@ -343,6 +346,7 @@ static void task_winc1500(void *p)
 					{
 						/* Bind service*/
 						openSocketFlag = 1;
+						printf("bind to socket %d\n",tcp_server_socket);
 						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 					}
 				}
