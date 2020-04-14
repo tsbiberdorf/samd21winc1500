@@ -4,6 +4,8 @@
  * Created: 4/13/2020 8:45:02 AM
  *  Author: ThreeBoysTech
  */ 
+#include <stdio.h>
+#include <string.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -29,6 +31,12 @@ char indexPage[]="\
         </body>\
 </html>";
 
+char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+
+char *MyHeader = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ";
+
+#define MAX_BUFFER_SIZE (512)
+char SendBuffer[MAX_BUFFER_SIZE];
 
 /**
  * \brief callback for URL parser
@@ -124,6 +132,11 @@ void httpOperationsHttpParse(char *dataBuffer,int bytesRecv)
 
 void SendPage(SOCKET tcpSocket)
 {
-	send(tcpSocket,indexPage,sizeof(indexPage),0);
+	int length;
+	/* need to create header to send with msg */
+
+	sprintf(SendBuffer,"%s %d\n\n%s",MyHeader,sizeof(indexPage),indexPage);
+	length = strlen(SendBuffer);
+	send(tcpSocket,SendBuffer,length,0);
 }
 
