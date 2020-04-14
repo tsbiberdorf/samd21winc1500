@@ -42,7 +42,15 @@ static int httpUrlCallback(http_parser *parser, const char *at, size_t length)
 /**
  * \brief callback for header field
  */
-static void httpHeaderFieldCallback(http_parser *parser, const char *at, size_t length)
+static int httpHeaderFieldCallback(http_parser *parser, const char *at, size_t length)
+{
+	return 0;
+}
+
+/**
+ * \brief callback for on_status 
+ */
+static int httpOnStatusCallback(http_parser *parser, const char *at, size_t length)
 {
 	return 0;
 }
@@ -50,7 +58,40 @@ static void httpHeaderFieldCallback(http_parser *parser, const char *at, size_t 
 /**
  * \brief callback for on body 
  */
-static void httpOnBodyCallback(http_parser *parser, const char *at, size_t length)
+static int httpOnBodyCallback(http_parser *parser, const char *at, size_t length)
+{
+	return 0;
+}
+
+
+/**
+ * \brief callback for on_header_value 
+ */
+static int httpOnHeaderValueCallback(http_parser *parser, const char *at, size_t length)
+{
+	return 0;
+}
+
+/**
+ * \brief callback for on_message_begin 
+ */
+static int httpOnMessageBeginCallback(http_parser *parser)
+{
+	return 0;
+}
+
+/**
+ * \brief callback for on_headers_complete 
+ */
+static int httpOnHeadersCompleteCallback(http_parser *parser)
+{
+	return 0;
+}
+
+/**
+ * \brief callback for on_message_complete 
+ */
+static int httpOnMessaGeCompleteCallback(http_parser *parser)
 {
 	return 0;
 }
@@ -63,6 +104,12 @@ void setupHttpParserOperations()
 	tl_HTTPSettings.on_url = httpUrlCallback;
 	tl_HTTPSettings.on_header_field = httpHeaderFieldCallback;
 	tl_HTTPSettings.on_body = httpOnBodyCallback;
+	tl_HTTPSettings.on_message_begin = httpOnMessageBeginCallback;
+	tl_HTTPSettings.on_status = httpOnStatusCallback;
+	tl_HTTPSettings.on_header_value = httpOnHeaderValueCallback;
+	tl_HTTPSettings.on_headers_complete = httpOnHeadersCompleteCallback;
+	tl_HTTPSettings.on_message_complete = httpOnMessaGeCompleteCallback;
+
 	tl_PtrHTTPParser = pvPortMalloc(sizeof(http_parser));
 	http_parser_init(tl_PtrHTTPParser,HTTP_REQUEST);
 }
