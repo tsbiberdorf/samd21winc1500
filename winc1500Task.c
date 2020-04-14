@@ -92,12 +92,12 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	case SOCKET_MSG_BIND: {
 		tstrSocketBindMsg *pstrBind = (tstrSocketBindMsg *)pvMsg;
 		if (pstrBind && pstrBind->status == 0) {
-			printf("socket_cb: bind success!\r\n");
+			printf("socket_cb: bind success! s:%d\r\n",tcp_server_socket);
 			listen(tcp_server_socket, 0);
 		} else {
 			xTaskNotify(xCreatedWiFiTask,SOCKET_CB_BIND_ERROR,eSetBits);
 			close(tcp_server_socket);
-			printf("socket_cb: bind error! %d\r\n",tcp_server_socket);
+			printf("socket_cb: bind error! s:%d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
 		}
 	} break;
@@ -107,11 +107,11 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		tstrSocketListenMsg *pstrListen = (tstrSocketListenMsg *)pvMsg;
 		if (pstrListen && pstrListen->status == 0) {
 			accept(tcp_server_socket, NULL, NULL);
-			printf("socket_cb: listen success! %d\r\n",tcp_server_socket);
+			printf("socket_cb: listen success! s:%d\r\n",tcp_server_socket);
 		} else {
 
 			close(tcp_server_socket);
-			printf("socket_cb: listen error! %d\r\n",tcp_server_socket);
+			printf("socket_cb: listen error! s:%d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
 		}
 	} break;
@@ -123,10 +123,10 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			accept(tcp_server_socket, NULL, NULL);
 			tcp_client_socket_test = pstrAccept->sock;
 			recv(tcp_client_socket_test, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
-			printf("socket_cb: accept success! %d %d\r\n",tcp_client_socket_test,strlen(gau8SocketTestBuffer));
+			printf("socket_cb: accept success! c:%d %d\r\n",tcp_client_socket_test,strlen(gau8SocketTestBuffer));
 			if( ((tcp_server_socket +1)%NUMBER_SOCKETS) != tcp_client_socket_test)
 			{
-				printf("client error socket to close %d\n",tcp_client_socket_test);
+				printf("client error socket to close c:%d\n",tcp_client_socket_test);
 				close(tcp_client_socket_test);
 			}
 			else
@@ -136,7 +136,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		}
 		else {
 			close(tcp_server_socket);
-			printf("socket_cb: accept error! %d\r\n",tcp_server_socket);
+			printf("socket_cb: accept error! s:%d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
 		}
 	} break;
@@ -342,7 +342,7 @@ static void task_winc1500(void *p)
 					{
 						/* Bind service*/
 						openSocketFlag = 1;
-						printf("bind to socket %d\n",tcp_server_socket);
+						printf("bind to socket s:%d\n",tcp_server_socket);
 						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 					}
 				}
@@ -357,7 +357,7 @@ static void task_winc1500(void *p)
 					{
 						/* Bind service*/
 						openSocketFlag = 1;
-						printf("bind to socket %d\n",tcp_server_socket);
+						printf("bind to socket s:%d\n",tcp_server_socket);
 						bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 					}
 				}
