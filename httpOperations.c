@@ -33,7 +33,7 @@ char indexPage[]="\
 
 char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
-char *MyHeader = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ";
+char *MyHeader = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/plain\nContent-Length: ";
 
 #define MAX_BUFFER_SIZE (512)
 char SendBuffer[MAX_BUFFER_SIZE];
@@ -135,7 +135,7 @@ void SendPage(SOCKET tcpSocket)
 	int length;
 	/* need to create header to send with msg */
 
-	sprintf(SendBuffer,"%s %d\n\n%s",MyHeader,sizeof(indexPage),indexPage);
+	sprintf(SendBuffer,"%s%d\n\n%s",MyHeader,sizeof(indexPage),indexPage);
 	length = strlen(SendBuffer);
 	send(tcpSocket,SendBuffer,length,0);
 }
