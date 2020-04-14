@@ -135,7 +135,7 @@ void SendPage(SOCKET tcpSocket)
 	int length;
 	/* need to create header to send with msg */
 
-	sprintf(SendBuffer,"%s%d\n\n%s",MyHeader,sizeof(indexPage),indexPage);
+	sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,sizeof(indexPage),indexPage);
 	length = strlen(SendBuffer);
 	send(tcpSocket,SendBuffer,length,0);
 }
