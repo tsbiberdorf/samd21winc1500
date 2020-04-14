@@ -33,7 +33,7 @@ char indexPage[]="\
 
 char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
-char *MyHeader = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/plain\nContent-Length: ";
+char *MyHeader = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\nContent-Length: ";
 
 #define MAX_BUFFER_SIZE (512)
 char SendBuffer[MAX_BUFFER_SIZE];
