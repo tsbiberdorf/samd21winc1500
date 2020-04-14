@@ -54,12 +54,13 @@ static uint8_t gau8SocketTestBuffer[MAIN_WIFI_M2M_BUFFER_SIZE];
 /** Socket for TCP communication */
 static SOCKET tcp_server_socket = -1;
 static SOCKET tcp_client_socket = -1;
+static SOCKET tcp_client_socket_test = -1;
 
 /** Wi-Fi connection state */
 static uint8_t wifi_connected;
 
 static char echoBuffer[64];
-
+#define NUMBER_SOCKETS (6)
 
 /**
  * \brief Callback to get the Data from socket.
@@ -120,10 +121,20 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		tstrSocketAcceptMsg *pstrAccept = (tstrSocketAcceptMsg *)pvMsg;
 		if (pstrAccept) {
 			accept(tcp_server_socket, NULL, NULL);
-			tcp_client_socket = pstrAccept->sock;
-			recv(tcp_client_socket, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
-			printf("socket_cb: accept success! %d %d\r\n",tcp_client_socket,strlen(gau8SocketTestBuffer));
-		} else {
+			tcp_client_socket_test = pstrAccept->sock;
+			recv(tcp_client_socket_test, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
+			printf("socket_cb: accept success! %d %d\r\n",tcp_client_socket_test,strlen(gau8SocketTestBuffer));
+			if( ((tcp_server_socket +1)%NUMBER_SOCKETS) != tcp_client_socket_test)
+			{
+				printf("client error socket to close %d\n",tcp_client_socket_test);
+				close(tcp_client_socket_test);
+			}
+			else
+			{
+				tcp_client_socket = tcp_client_socket_test;
+			} 
+		}
+		else {
 			close(tcp_server_socket);
 			printf("socket_cb: accept error! %d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
