@@ -61,6 +61,41 @@ static uint8_t wifi_connected;
 
 static char echoBuffer[64];
 #define NUMBER_SOCKETS (6)
+#define CLIENT_SOCKET_LIMIT (6)
+static SOCKET tl_ClientSocket[CLIENT_SOCKET_LIMIT];
+static uint8_t tl_ClientSocketIdx = 0;
+
+static void PushClientSocket(SOCKET clientSocket )
+{
+	printf("push socket %d\n",clientSocket);
+	tl_ClientSocket[tl_ClientSocketIdx] = clientSocket;
+	tl_ClientSocketIdx++;
+}
+
+static SOCKET SendClientSocket()
+{
+	if(tl_ClientSocketIdx>0)
+	{
+		printf("send data to socket %d\n",tl_ClientSocket[tl_ClientSocketIdx-1]);
+		return tl_ClientSocket[tl_ClientSocketIdx-1];
+	}
+	else
+	{
+		return -1;
+	}
+}
+static void PopClientSockets()
+{
+	int idx;
+	for( idx=0; idx <tl_ClientSocketIdx; idx++ )
+	{
+		printf("close socket %d\n",tl_ClientSocket[idx]);
+		close(tl_ClientSocket[idx]);
+		tl_ClientSocket[idx] = -1;
+	}
+
+	tl_ClientSocketIdx = 0;
+}
 
 /**
  * \brief Callback to get the Data from socket.
@@ -121,18 +156,10 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		tstrSocketAcceptMsg *pstrAccept = (tstrSocketAcceptMsg *)pvMsg;
 		if (pstrAccept) {
 			accept(tcp_server_socket, NULL, NULL);
-			tcp_client_socket_test = pstrAccept->sock;
-			recv(tcp_client_socket_test, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
-			printf("socket_cb: accept success! c:%d %d\r\n",tcp_client_socket_test,strlen(gau8SocketTestBuffer));
-			if( ((tcp_server_socket +1)%NUMBER_SOCKETS) != tcp_client_socket_test)
-			{
-				printf("client error socket to close c:%d\n",tcp_client_socket_test);
-				close(tcp_client_socket_test);
-			}
-			else
-			{
-				tcp_client_socket = tcp_client_socket_test;
-			} 
+			tcp_client_socket = pstrAccept->sock;
+			PushClientSocket(tcp_client_socket);
+			recv(tcp_client_socket, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
+			printf("socket_cb: accept success! c:%d %d\r\n",tcp_client_socket,strlen(gau8SocketTestBuffer));
 		}
 		else {
 			close(tcp_server_socket);
@@ -143,11 +170,12 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 
 	/* Message send */
 	case SOCKET_MSG_SEND: {
-		close(tcp_client_socket);
+		//close(tcp_client_socket);
 		close(tcp_server_socket);
+		tcp_server_socket = -1;
 		printf("socket_cb: send success! c:%d s:%d\r\n",tcp_client_socket,tcp_server_socket);
 		printf("TCP Server Test Complete!\r\n");
-		printf("close socket\n");
+		//printf("close socket\n");
 		xTaskNotify(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits);
 	} break;
 
@@ -317,6 +345,7 @@ static void task_winc1500(void *p)
 				if( !openSocketFlag )
 				{
 					/* Open TCP server socket */
+					PopClientSockets();
 					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 					{
 						printf("main: failed to create TCP server socket error!\r\n");
@@ -333,7 +362,8 @@ static void task_winc1500(void *p)
 				if( notifyBits & SOCKET_CB_MSG_SENT)
 				{
 					/* Open TCP server socket */
-					vTaskDelay(100);
+					vTaskDelay(1000);
+					PopClientSockets();
 					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 					{
 						printf("main: failed to create TCP server socket error!\r\n");
