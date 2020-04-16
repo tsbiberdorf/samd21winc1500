@@ -54,7 +54,7 @@ static uint8_t gau8SocketTestBuffer[MAIN_WIFI_M2M_BUFFER_SIZE];
 /** Socket for TCP communication */
 static SOCKET tcp_server_socket = -1;
 static SOCKET tcp_client_socket = -1;
-static SOCKET tcp_client_socket_test = -1;
+static SOCKET tcp_send_socket = -1;
 
 /** Wi-Fi connection state */
 static uint8_t wifi_connected;
@@ -93,7 +93,7 @@ static void PopClientSockets()
 		close(tl_ClientSocket[idx]);
 		tl_ClientSocket[idx] = -1;
 	}
-
+	tcp_send_socket = -1;
 	tl_ClientSocketIdx = 0;
 }
 
@@ -158,6 +158,11 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			accept(tcp_server_socket, NULL, NULL);
 			tcp_client_socket = pstrAccept->sock;
 			PushClientSocket(tcp_client_socket);
+			if( (tcp_server_socket >=0) &&(tcp_send_socket<0))
+			{
+				tcp_send_socket = tcp_client_socket;
+				printf("send socket %d\r\n",tcp_send_socket);
+			}
 			recv(tcp_client_socket, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
 			printf("socket_cb: accept success! c:%d %d\r\n",tcp_client_socket,strlen(gau8SocketTestBuffer));
 		}
@@ -186,7 +191,10 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		{
 			httpOperationsHttpParse(pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
 		}
-		SendPage(tcp_client_socket);
+		if(tcp_send_socket>= 0)
+		{
+			SendPage(tcp_send_socket);
+		}
 //		close(tcp_client_socket);
 //		close(tcp_server_socket);
 #if 0
