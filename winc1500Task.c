@@ -409,21 +409,6 @@ static void task_winc1500(void *p)
 		}
 		/* Handle pending events from network controller. */
 		m2m_wifi_handle_events(NULL);
-#if 0
-		if (wifi_connected == M2M_WIFI_CONNECTED) {
-			if (tcp_server_socket < 0) {
-				/* Open TCP server socket */
-				if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-					printf("main: failed to create TCP server socket error!\r\n");
-					continue;
-				}
-
-				/* Bind service*/
-				bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-			}
-		}
-#endif
-		//os_sleep(10);
 	}
 }
 
