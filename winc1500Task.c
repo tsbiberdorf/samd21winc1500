@@ -120,7 +120,10 @@ static void PopClientSockets()
 static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 {
 	int idx;
-	xTaskNotify(xCreatedWiFiTask,SOCKET_CB_EVENT,eSetBits);
+	BaseType_t xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+	
+	xTaskNotifyFromISR(xCreatedWiFiTask,SOCKET_CB_EVENT,eSetBits,&xHigherPriorityTaskWoken);
 
 	switch (u8Msg) {
 	/* Socket bind */
@@ -130,7 +133,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			printf("socket_cb: bind success! s:%d\r\n",tcp_server_socket);
 			listen(tcp_server_socket, 0);
 		} else {
-			xTaskNotify(xCreatedWiFiTask,SOCKET_CB_BIND_ERROR,eSetBits);
+			xTaskNotifyFromISR(xCreatedWiFiTask,SOCKET_CB_BIND_ERROR,eSetBits,&xHigherPriorityTaskWoken);
 			close(tcp_server_socket);
 			printf("socket_cb: bind error! s:%d\r\n",tcp_server_socket);
 			tcp_server_socket = -1;
@@ -181,7 +184,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		printf("socket_cb: send success! c:%d s:%d\r\n",tcp_client_socket,tcp_server_socket);
 		printf("TCP Server Test Complete!\r\n");
 		//printf("close socket\n");
-		xTaskNotify(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits);
+		xTaskNotifyFromISR(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits,&xHigherPriorityTaskWoken);
 	} break;
 
 	/* Message receive */
@@ -251,10 +254,13 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 {
 
+	BaseType_t xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+
 	switch (u8MsgType) {
 	case M2M_WIFI_RESP_CON_STATE_CHANGED: 
 	{
-		xTaskNotify(xCreatedWiFiTask,WIFI_CB_STATE_CHANGED,eSetBits);
+		xTaskNotifyFromISR(xCreatedWiFiTask,WIFI_CB_STATE_CHANGED,eSetBits,&xHigherPriorityTaskWoken);
 		tstrM2mWifiStateChanged *pstrWifiState = (tstrM2mWifiStateChanged *)pvMsg;
 		if (pstrWifiState->u8CurrState == M2M_WIFI_CONNECTED) {
 			printf("wifi_cb: M2M_WIFI_RESP_CON_STATE_CHANGED: CONNECTED\r\n");
@@ -270,7 +276,7 @@ static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 
 	case M2M_WIFI_REQ_DHCP_CONF: 
 	{
-		xTaskNotify(xCreatedWiFiTask,WIFI_CB_DHCP_CONNECTION,eSetBits);
+		xTaskNotifyFromISR(xCreatedWiFiTask,WIFI_CB_DHCP_CONNECTION,eSetBits,&xHigherPriorityTaskWoken);
 		uint8_t *pu8IPAddress = (uint8_t *)pvMsg;
 		wifi_connected        = 1;
 		printf("wifi_cb: M2M_WIFI_REQ_DHCP_CONF: IP is %u.%u.%u.%u\r\n",
@@ -282,7 +288,7 @@ static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 	break;
 
 	default:
-		xTaskNotify(xCreatedWiFiTask,WIFI_CB_OTHER,eSetBits);
+		xTaskNotifyFromISR(xCreatedWiFiTask,WIFI_CB_OTHER,eSetBits,&xHigherPriorityTaskWoken);
 		break;
 	}
 }
