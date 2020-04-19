@@ -328,7 +328,7 @@ static void task_winc1500(void *p)
 		xResult = xTaskNotifyWait( 0x00,    /* Don't clear bits on entry. */
 				0xFFFFFFFF,        /* Clear all bits on exit. */
 				&notifyBits, /* Stores the notified value. */
-				20 );
+				2 );
 		if( xResult == pdPASS )
 		{
 			if( notifyBits & WIFI_CB_STATE_CHANGED)
@@ -366,7 +366,6 @@ static void task_winc1500(void *p)
 				if( notifyBits & SOCKET_CB_MSG_SENT)
 				{
 					/* Open TCP server socket */
-					vTaskDelay(1000);
 					PopClientSockets();
 					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 					{
