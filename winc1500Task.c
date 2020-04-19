@@ -7,6 +7,7 @@
 #include "driver/include/m2m_wifi.h"
 #include "socket/include/socket.h"
 #include "httpOperations.h"
+#include "winc1500Task.h"
 
 #include <hal_gpio.h>
 #include <hal_delay.h>
@@ -21,17 +22,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-
-/*
- * WINC1500 Task events
- */
-#define WIFI_CB_STATE_CHANGED (1<<0)
-#define WIFI_CB_DHCP_CONNECTION (1<<1)
-#define WIFI_CB_OTHER (1<<2)
-
-#define SOCKET_CB_EVENT		(1<<3) /**< Socket event has happened */
-#define SOCKET_CB_MSG_SENT	(1<<4) /**< echo message has been sent, sockets have been closed */
-#define SOCKET_CB_BIND_ERROR	(1<<5) /**< echo message has been sent, sockets have been closed */
 
 static TaskHandle_t xCreatedWiFiTask;
 
