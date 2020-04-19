@@ -23,6 +23,7 @@
 #define SEND_HTTP_PAGE (1<<6)
 #define STORE_SOCKET_ID (1<<7)
 
+#define TASK_SOCKET_MSG_BIND (1<<8)
 
 
 #endif /* WINC1500TASK_H_ */

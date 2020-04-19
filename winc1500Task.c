@@ -127,8 +127,10 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	case SOCKET_MSG_BIND: {
 		tstrSocketBindMsg *pstrBind = (tstrSocketBindMsg *)pvMsg;
 		if (pstrBind && pstrBind->status == 0) {
-			printf("socket_cb: bind success! s:%d\r\n",tcp_server_socket);
+			//printf("socket_cb: bind success! s:%d\r\n",tcp_server_socket);
 			listen(tcp_server_socket, 0);
+			xTaskNotifyFromISR(xCreatedWiFiTask,TASK_SOCKET_MSG_BIND,eSetBits,&xHigherPriorityTaskWoken);
+
 		} else {
 			xTaskNotifyFromISR(xCreatedWiFiTask,SOCKET_CB_BIND_ERROR,eSetBits,&xHigherPriorityTaskWoken);
 			close(tcp_server_socket);
@@ -142,7 +144,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		tstrSocketListenMsg *pstrListen = (tstrSocketListenMsg *)pvMsg;
 		if (pstrListen && pstrListen->status == 0) {
 			accept(tcp_server_socket, NULL, NULL);
-			printf("socket_cb: listen success! s:%d\r\n",tcp_server_socket);
+			//printf("socket_cb: listen success! s:%d\r\n",tcp_server_socket);
 		} else {
 
 			close(tcp_server_socket);
@@ -328,6 +330,11 @@ static void task_winc1500(void *p)
 				printf("WIFI_CB_OTHER\n");
 			}
 
+			if( notifyBits & TASK_SOCKET_MSG_BIND)
+			{
+				printf("socket_cb: bind success! s:%d\r\n",tcp_server_socket);
+			}
+			
 			if( wifiConnectionFlag )
 			{
 				if( !openSocketFlag )
