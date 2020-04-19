@@ -59,6 +59,13 @@ static void PushClientSocket(SOCKET clientSocket )
 {
 	printf("push socket %d\n",clientSocket);
 	tl_ClientSocket[tl_ClientSocketIdx] = clientSocket;
+	
+	if( (tcp_server_socket >=0) &&(tcp_send_socket<0))
+	{
+		tcp_send_socket = clientSocket;
+		printf("send socket %d\r\n",tcp_send_socket);
+	}
+
 	tl_ClientSocketIdx++;
 }
 
@@ -151,11 +158,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			accept(tcp_server_socket, NULL, NULL);
 			tcp_client_socket = pstrAccept->sock;
 			PushClientSocket(tcp_client_socket);
-			if( (tcp_server_socket >=0) &&(tcp_send_socket<0))
-			{
-				tcp_send_socket = tcp_client_socket;
-				printf("send socket %d\r\n",tcp_send_socket);
-			}
+			
 			recv(tcp_client_socket, gau8SocketTestBuffer, sizeof(gau8SocketTestBuffer), 0);
 			printf("socket_cb: accept success! c:%d %d\r\n",tcp_client_socket,strlen(gau8SocketTestBuffer));
 		}
@@ -188,26 +191,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		{
 			SendPage(tcp_send_socket);
 		}
-//		close(tcp_client_socket);
-//		close(tcp_server_socket);
-#if 0
-		if (pstrRecv && pstrRecv->s16BufferSize > 0) {
-			printf("socket_cb: recv success!\r\n");
-			/* echo data back to client */
-			for(idx=0;idx<pstrRecv->s16BufferSize;idx++)
-			{
-				echoBuffer[idx] = pstrRecv->pu8Buffer[idx];
-			}
-			printf("echo back: %s\n",echoBuffer);
-			send(tcp_client_socket,echoBuffer,idx,0);
-			//send(tcp_client_socket, &msg_wifi_product, sizeof(t_msg_wifi_product), 0);
-		} else {
-			printf("socket_cb: recv error!\r\n");
-			close(tcp_server_socket);
-			tcp_server_socket = -1;
-		}
 
-#endif
 	}
 	break;
 
