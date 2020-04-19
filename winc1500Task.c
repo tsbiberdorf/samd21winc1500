@@ -176,8 +176,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		//close(tcp_client_socket);
 		close(tcp_server_socket);
 		tcp_server_socket = -1;
-		printf("socket_cb: send success! c:%d s:%d\r\n",tcp_client_socket,tcp_server_socket);
-		printf("TCP Server Test Complete!\r\n");
 		//printf("close socket\n");
 		xTaskNotifyFromISR(xCreatedWiFiTask,SOCKET_CB_MSG_SENT,eSetBits,&xHigherPriorityTaskWoken);
 	} break;
@@ -364,6 +362,9 @@ static void task_winc1500(void *p)
 
 				if( notifyBits & SOCKET_CB_MSG_SENT)
 				{
+					printf("socket_cb: send success! c:%d s:%d\r\n",tcp_client_socket,tcp_server_socket);
+					printf("TCP Server Test Complete!\r\n");
+
 					/* Open TCP server socket */
 					PopClientSockets();
 					if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
