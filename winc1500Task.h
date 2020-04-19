@@ -25,5 +25,6 @@
 
 #define TASK_SOCKET_MSG_BIND (1<<8)
 #define TASK_SOCKET_MSG_LISTEN (1<<9)
+#define TASK_SOCKET_MSG_ACCEPT (1<<10)
 
 #endif /* WINC1500TASK_H_ */
