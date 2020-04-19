@@ -25,7 +25,7 @@
 
 static TaskHandle_t xCreatedWiFiTask;
 
-#define TASK_WIFI_STACK_SIZE (1024 / sizeof(portSTACK_TYPE))
+#define TASK_WIFI_STACK_SIZE (2*1024 / sizeof(portSTACK_TYPE))
 #define TASK_WIFI_STACK_PRIORITY (tskIDLE_PRIORITY + 1)
 
 /** Message format definitions. */
@@ -187,10 +187,13 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		{
 			httpOperationsHttpParse(pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
 		}
+		xTaskNotifyFromISR(xCreatedWiFiTask,TASK_SOCKET_MSG_RECV,eSetBits,&xHigherPriorityTaskWoken);
+		/*
 		if(tcp_send_socket>= 0)
 		{
 			SendPage(tcp_send_socket);
 		}
+		*/
 
 	}
 	break;
@@ -341,6 +344,13 @@ static void task_winc1500(void *p)
 				printf("socket_cb: accept success! c:%d\r\n",tcp_client_socket);
 			}
 			
+			if( notifyBits &TASK_SOCKET_MSG_RECV)
+			{
+				if(tcp_send_socket>= 0)
+				{
+						SendPage(tcp_send_socket);
+				}
+			}
 			if( wifiConnectionFlag )
 			{
 				if( !openSocketFlag )
