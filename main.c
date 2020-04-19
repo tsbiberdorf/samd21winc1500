@@ -28,7 +28,11 @@ void SERCOM3_Handler()
 
 void HardFault_Handler()
 {
-	while(1);
+	volatile int cnt = 1;
+	while(cnt)
+	{
+		cnt++;
+	}
 }
 /**
  * OS task that blinks LED
