@@ -281,6 +281,9 @@ static void task_winc1500(void *p)
 	BaseType_t xResult;
 	int8_t wifiConnectionFlag = 0; // flag to indicate if a wifi connection is made
 	int8_t openSocketFlag = 0;
+	
+	tstrM2MAPConfig   strM2MAPConfig;
+
 	/* Initialize the BSP. */
 	nm_bsp_init();
 
@@ -303,10 +306,39 @@ static void task_winc1500(void *p)
 	socketInit();
 	registerSocketCallback(socket_cb, NULL);
 
+#if USE_AP_CONNECTION // if set to 1 if act as an access point
+	/* Initialize AP mode parameters structure with SSID, channel and OPEN security type. */
+	memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
+	strcpy((char *)&strM2MAPConfig.au8SSID, MAIN_WLAN_SSID);
+	strM2MAPConfig.u8ListenChannel = MAIN_WLAN_CHANNEL;
+	strM2MAPConfig.u8SecType       = MAIN_WLAN_AUTH;
+
+	strM2MAPConfig.au8DHCPServerIP[0] = 192;
+	strM2MAPConfig.au8DHCPServerIP[1] = 168;
+	strM2MAPConfig.au8DHCPServerIP[2] = 100;
+	strM2MAPConfig.au8DHCPServerIP[3] = 1;
+
+#if USE_WEP
+	strcpy((char *)&strM2MAPConfig.au8WepKey, MAIN_WLAN_WEP_KEY);
+	strM2MAPConfig.u8KeySz   = strlen(MAIN_WLAN_WEP_KEY);
+	strM2MAPConfig.u8KeyIndx = MAIN_WLAN_WEP_KEY_INDEX;
+#endif
+
+	/* Bring up AP mode with parameters structure. */
+	ret = m2m_wifi_enable_ap(&strM2MAPConfig);
+	if (M2M_SUCCESS != ret) {
+		printf("main: m2m_wifi_enable_ap call error!\r\n");
+		while (1) {
+		}
+	}
+
+	printf("AP mode started. You can connect to %s.\r\n", (char *)MAIN_WLAN_SSID);
+
+#else // if USE_AP_CONNECTION is set to 0 if we are to connect to a router
 	/* Connect to router. */
 	m2m_wifi_connect(
 	(char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID), MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
-
+#endif
 
 
 
