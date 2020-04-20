@@ -29,7 +29,7 @@ char indexPage[]="\
                 <h1>heading 1: very simple HTML page</h1>\
                 <p>some data</p>\
         </body>\
-</html>";
+</html>\n";
 
 char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
@@ -136,7 +136,7 @@ void SendPage(SOCKET tcpSocket)
 	/* need to create header to send with msg */
 
 	sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,sizeof(indexPage),indexPage);
-	length = strlen(SendBuffer);
+	length = strlen(SendBuffer) + 1;
 	send(tcpSocket,SendBuffer,length,0);
 }
 
