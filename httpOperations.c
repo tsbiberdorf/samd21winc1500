@@ -14,6 +14,7 @@
 #include "common/include/nm_common.h"
 #include "driver/include/m2m_wifi.h"
 #include "socket/include/socket.h"
+#include "winc1500Task.h"
 #include "http_parser.h"
 
 
@@ -57,6 +58,33 @@ function loadXMLDoc() {\
 </html>\n";
 #endif
 
+const char buttonText[]="\
+<!DOCTYPE html>\
+<html>\
+<body>\
+<div id=\"demo\">\
+<button type=\"button\" onclick=\"loadXMLDoc()\">Change Content</button>\
+</div>\
+<script>\
+function loadXMLDoc() {\
+	var xhttp = new XMLHttpRequest();\
+	xhttp.onreadystatechange = function() {\
+		if (this.readyState == 4 && this.status == 200) {\
+			document.getElementById(\"demo\").innerHTML =\
+			this.responseText;\
+		}\
+	};\
+	xhttp.open(\"GET\", \"xmlhttp_info.txt\", true);\
+	xhttp.send();\
+}\
+</script>\
+</body>\
+</html>\n";
+
+
+char *tl_HTTPPrintPage = indexPage;
+const char ButtonPressedText[] = "buttonPressed.txt";
+char *tl_HTTPMsg = NULL;
 char *MyHeader = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: ";
 
 #define MAX_BUFFER_SIZE (1024)
@@ -67,6 +95,7 @@ char SendBuffer[MAX_BUFFER_SIZE];
  */
 static int httpUrlCallback(http_parser *parser, const char *at, size_t length)
 {
+	tl_HTTPMsg=at;
 	return 0;
 }
 
@@ -125,9 +154,66 @@ static int httpOnHeadersCompleteCallback(http_parser *parser)
  */
 static int httpOnMessaGeCompleteCallback(http_parser *parser)
 {
+	BaseType_t xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+	xTaskNotifyFromISR(GetWiFiTaskId(),HTTP_httpOnMessaGeCompleteCallback,eSetBits,&xHigherPriorityTaskWoken);
+
 	return 0;
 }
 
+
+static void ParseHTTPMsg(char *ptrHTTPMsg)
+{
+	int idx,matchIdx;
+	int firstMardIdx = 0;
+int secondMardIdx = 0;
+	
+	/* first find the first '/' */	
+for(idx=0; idx<MAX_BUFFER_SIZE; idx++)
+	{
+		if( ptrHTTPMsg[idx] == '/')
+		{
+		firstMardIdx = idx;
+			break;
+		}
+	}
+	
+	/*
+ * now try to match the possible additional requests
+	 */
+	for(idx=firstMardIdx+1,matchIdx = 0; idx<(MAX_BUFFER_SIZE-firstMardIdx); idx++)
+{
+		if( ptrHTTPMsg[idx] == ButtonPressedText[matchIdx])
+		{
+			matchIdx++;
+		}
+	if( ptrHTTPMsg[idx] == '/')
+		{
+			secondMardIdx = idx;
+			break;
+		}
+}
+	if(matchIdx == (sizeof(ButtonPressedText)-1))
+	{
+		printf("button pressed text found\r\n");
+		tl_HTTPPrintPage = buttonText;
+	}
+if( secondMardIdx < MAX_BUFFER_SIZE)
+	{
+		ptrHTTPMsg[secondMardIdx+1] = 0x0;
+	}
+}
+
+void PrintHTTPCBMsg()
+{
+	if(tl_HTTPMsg)
+	{
+		ParseHTTPMsg(tl_HTTPMsg);
+		printf("%s\r\n",tl_HTTPMsg);
+		tl_HTTPMsg=NULL;
+	}
+}
+ 
 
 void setupHttpParserOperations()
 {

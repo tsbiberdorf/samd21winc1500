@@ -413,8 +413,8 @@ static void task_winc1500(void *p)
 			if( notifyBits & HTTP_httpOnMessaGeCompleteCallback)
 			{
 				printf("HTTP_httpOnMessaGeCompleteCallback\r\n");
-				//extern void PrintHTTPCBMsg();
-				//PrintHTTPCBMsg();
+				extern void PrintHTTPCBMsg();
+				PrintHTTPCBMsg();
 			}
 			if( notifyBits & TASK_SOCKET_MSG_RECV)
 			{
