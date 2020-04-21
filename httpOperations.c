@@ -20,14 +20,15 @@
 http_parser_settings tl_HTTPSettings;
 http_parser *tl_PtrHTTPParser = NULL;
 
-char indexPage[]="\
+const char indexPage[]="\
 <html>\
         <head>\
         <title> very simple HTML page </title>\
         </head>\
         <body>\
                 <h1>heading 1: very simple HTML page</h1>\
-                <p>some data</p>\
+                <p>some data </p>\
+				<button >Click Me!</button>\
         </body>\
 </html>\n";
 
