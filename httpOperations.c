@@ -19,7 +19,7 @@
 
 http_parser_settings tl_HTTPSettings;
 http_parser *tl_PtrHTTPParser = NULL;
-
+#if 0
 const char indexPage[]="\
 <html>\
         <head>\
@@ -31,12 +31,35 @@ const char indexPage[]="\
 				<button >Click Me!</button>\
         </body>\
 </html>\n";
-
-char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+#else
+const char indexPage[]="\
+<!DOCTYPE html>\
+<html>\
+<body>\
+<h2>Using the XMLHttpRequest Object</h2>\
+<div id=\"demo\">\
+<button type=\"button\" onclick=\"loadXMLDoc()\">Change Content</button>\
+</div>\
+<script>\
+function loadXMLDoc() {\
+  var xhttp = new XMLHttpRequest();\
+  xhttp.onreadystatechange = function() {\
+    if (this.readyState == 4 && this.status == 200) {\
+      document.getElementById(\"demo\").innerHTML =\
+      this.responseText;\
+    }\
+  };\
+  xhttp.open(\"GET\", \"xmlhttp_info.txt\", true);\
+  xhttp.send();\
+}\
+</script>\
+</body>\
+</html>\n";
+#endif
 
 char *MyHeader = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: ";
 
-#define MAX_BUFFER_SIZE (512)
+#define MAX_BUFFER_SIZE (1024)
 char SendBuffer[MAX_BUFFER_SIZE];
 
 /**
@@ -138,6 +161,10 @@ void SendPage(SOCKET tcpSocket)
 
 	sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,sizeof(indexPage),indexPage);
 	length = strlen(SendBuffer) + 1;
+	
+	//sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,sizeof(buttonPage),buttonPage);
+	//length = strlen(buttonPage) + 1;
+	
 	send(tcpSocket,SendBuffer,length,0);
 }
 
