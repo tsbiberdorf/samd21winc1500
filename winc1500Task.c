@@ -188,12 +188,13 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			httpOperationsHttpParse(pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
 		}
 		xTaskNotifyFromISR(xCreatedWiFiTask,TASK_SOCKET_MSG_RECV,eSetBits,&xHigherPriorityTaskWoken);
-		/*
+
+/*		
 		if(tcp_send_socket>= 0)
 		{
 			SendPage(tcp_send_socket);
 		}
-		*/
+	*/	
 
 	}
 	break;
@@ -375,14 +376,55 @@ static void task_winc1500(void *p)
 			{
 				printf("socket_cb: accept success! c:%d\r\n",tcp_client_socket);
 			}
+
+			if(notifyBits & TASK_SOCKET_MSG_ACCEPT)
+			{
+				printf("socket_cb: accept success! c:%d\r\n",tcp_client_socket);
+			}
 			
-			if( notifyBits &TASK_SOCKET_MSG_RECV)
+			if( notifyBits & HTTP_httpUrlCallback)
+			{
+				printf("HTTP_httpUrlCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpHeaderFieldCallback)
+			{
+				printf("HTTP_httpHeaderFieldCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpOnStatusCallback)
+			{
+				printf("HTTP_httpOnStatusCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpOnBodyCallback)
+			{
+				printf("HTTP_httpOnBodyCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpOnHeaderValueCallback)
+			{
+				printf("HTTP_httpOnHeaderValueCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpOnMessageBeginCallback)
+			{
+				printf("HTTP_httpOnMessageBeginCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpOnHeadersCompleteCallback)
+			{
+				printf("HTTP_httpOnHeadersCompleteCallback\r\n");
+			}
+			if( notifyBits & HTTP_httpOnMessaGeCompleteCallback)
+			{
+				printf("HTTP_httpOnMessaGeCompleteCallback\r\n");
+				extern void PrintHTTPCBMsg();
+				PrintHTTPCBMsg();
+			}
+			if( notifyBits & TASK_SOCKET_MSG_RECV)
 			{
 				if(tcp_send_socket>= 0)
 				{
-						SendPage(tcp_send_socket);
+					SendPage(tcp_send_socket);
 				}
 			}
+					
+
 			if( wifiConnectionFlag )
 			{
 				if( !openSocketFlag )
@@ -457,3 +499,7 @@ void task_winc1500_create(void)
 	}
 }
 
+TaskHandle_t GetWiFiTaskId()
+{
+	return xCreatedWiFiTask;
+}

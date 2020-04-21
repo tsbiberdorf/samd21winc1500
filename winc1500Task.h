@@ -23,10 +23,18 @@
 #define SEND_HTTP_PAGE (1<<6)
 #define STORE_SOCKET_ID (1<<7)
 
-#define TASK_SOCKET_MSG_BIND (1<<8)
-#define TASK_SOCKET_MSG_LISTEN (1<<9)
-#define TASK_SOCKET_MSG_ACCEPT (1<<10)
-#define TASK_SOCKET_MSG_RECV (1<<11)
+#define TASK_SOCKET_MSG_BIND				(1<<8)
+#define TASK_SOCKET_MSG_LISTEN				(1<<9)
+#define TASK_SOCKET_MSG_ACCEPT				(1<<10)
+#define TASK_SOCKET_MSG_RECV				(1<<11)
+#define HTTP_httpUrlCallback				(1<<12)
+#define HTTP_httpHeaderFieldCallback		(1<<13)
+#define HTTP_httpOnStatusCallback			(1<<14)
+#define HTTP_httpOnBodyCallback				(1<<15)
+#define HTTP_httpOnHeaderValueCallback		(1<<16)
+#define HTTP_httpOnMessageBeginCallback		(1<<17)
+#define HTTP_httpOnHeadersCompleteCallback	(1<<18)
+#define HTTP_httpOnMessaGeCompleteCallback	(1<<19)
 
 #define USE_WEP (0)
 #define USE_AP_CONNECTION (0)
@@ -62,6 +70,7 @@
 
 #define MAIN_WIFI_M2M_BUFFER_SIZE 1460
 
+TaskHandle_t GetWiFiTaskId();
 
 
 
