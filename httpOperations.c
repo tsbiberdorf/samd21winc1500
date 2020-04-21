@@ -50,7 +50,7 @@ function loadXMLDoc() {\
       this.responseText;\
     }\
   };\
-  xhttp.open(\"GET\", \"xmlhttp_info.txt\", true);\
+  xhttp.open(\"GET\", \"buttonPressed.txt\", true);\
   xhttp.send();\
 }\
 </script>\
@@ -74,7 +74,7 @@ function loadXMLDoc() {\
 			this.responseText;\
 		}\
 	};\
-	xhttp.open(\"GET\", \"xmlhttp_info.txt\", true);\
+	xhttp.open(\"GET\", \"buttonPressed.txt\", true);\
 	xhttp.send();\
 }\
 </script>\
