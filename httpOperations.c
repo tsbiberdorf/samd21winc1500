@@ -245,7 +245,7 @@ void SendPage(SOCKET tcpSocket)
 	int length;
 	/* need to create header to send with msg */
 
-	sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,strlen(indexPage),indexPage);
+	sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,strlen(tl_HTTPPrintPage),tl_HTTPPrintPage);
 	length = strlen(SendBuffer) + 1;
 	
 	//sprintf(SendBuffer,"%s%d\r\n\r\n%s",MyHeader,sizeof(buttonPage),buttonPage);
