@@ -63,7 +63,7 @@ const char buttonText[]="\
 <html>\
 <body>\
 <div id=\"demo\">\
-<button type=\"button\" onclick=\"loadXMLDoc()\">Change Content</button>\
+<button style=\"background-color:#4cFFFF \" type=\"button\" onclick=\"loadXMLDoc()\">button changed text</button>\
 </div>\
 <script>\
 function loadXMLDoc() {\
@@ -197,6 +197,10 @@ for(idx=0; idx<MAX_BUFFER_SIZE; idx++)
 	{
 		printf("button pressed text found\r\n");
 		tl_HTTPPrintPage = buttonText;
+	}
+	else
+	{
+		tl_HTTPPrintPage = indexPage;
 	}
 if( secondMardIdx < MAX_BUFFER_SIZE)
 	{
